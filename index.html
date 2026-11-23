@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War das Américas</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>War das Américas</h1>
+  <span id="status" role="status"></span>
+  <button id="newGame" class="primary">Novo jogo</button>
+  <button id="saveSlot">Salvar</button>
+  <button id="loadSlot">Carregar</button>
+  <button id="exportFile">Exportar</button>
+  <label class="btn">Importar<input type="file" id="importFile" accept=".json,application/json" hidden></label>
+</header>
+<main class="layout">
+  <svg id="map" viewBox="0 0 640 980" role="img" aria-label="Mapa das Américas"></svg>
+  <aside class="panel">
+    <section id="info"></section>
+    <section id="players"></section>
+  </aside>
+</main>
+
+<dialog id="setup">
+  <h2>Novo jogo</h2>
+  <label class="count">Jogadores <select id="numPlayers"></select></label>
+  <div id="setupRows"></div>
+  <p class="hint">Nome com até 10 caracteres. Se escolher uma cor já usada, os dois jogadores trocam de cor.</p>
+  <div class="actions">
+    <button id="cancelSetup">Cancelar</button>
+    <button id="startGame" class="primary">Começar</button>
+  </div>
+</dialog>
+<script src="game.js"></script>
+</body>
+</html>

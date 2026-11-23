@@ -86,3 +86,21 @@ dialog button, dialog select, dialog input { font: inherit; padding: 6px 10px; b
 dialog .swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel) inset; }
 .hint { color: var(--muted); font-size: .85rem; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+/* ===== AJUSTE DE CONTRASTE SOBRE O NOVO MAPA ===== */
+#map {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.edges line {
+  stroke: #e2f1f8;
+  stroke-width: 2;
+  stroke-opacity: 0.8;
+}
+.terr .label {
+  fill: #ffffff;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: #13313d;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}

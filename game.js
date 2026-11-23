@@ -82,10 +82,38 @@ function shuffle(a) {
   return a;
 }
 
-function newGame(players) {
+function calcDeployPoints(playerIdx) {
+  const count = IDS.filter(id => state.owner[id] === playerIdx).length;
+  return Math.max(1, Math.floor(count / 2));
+}
+
+function initTurn(turnIdx, round) {
+  state.turn = turnIdx;
+  state.round = round;
+  state.phase = "deploy";
+  state.pool = calcDeployPoints(turnIdx);
+  state.selected = null;
+}
+
+function select(id) {
   const owner = {}, armies = {};
-  shuffle([...IDS]).forEach((id, i) => { owner[id] = i % players.length; armies[id] = 1 + Math.floor(Math.random() * 3); });
-  state = { players, owner, armies, selected: null };
+  shuffle([...IDS]).forEach((id, i) => {
+    owner[id] = i % players.length;
+    armies[id] = 1 + Math.floor(Math.random() * 3);
+  });
+  state = { players, owner, armies, turn: 0, round: 1, phase: "deploy", pool: 0, selected: null };
+  initTurn(0, 1);
+  render();
+}
+
+function endTurn() {
+  let next = state.turn, round = state.round;
+  for (let i = 0; i < state.players.length; i++) {
+    next = (next + 1) % state.players.length;
+    if (next === 0) round++;
+    if (IDS.some(id => state.owner[id] === next)) break;
+  }
+  initTurn(next, round);
   render();
 }
 
@@ -267,7 +295,19 @@ function buildMap() {
   });
 }
 
-function select(id) { state.selected = state.selected === id ? null : id; render(); }
+function select(id) {
+  if (state.phase === "deploy") {
+    if (state.owner[id] !== state.turn) return status("Clique em um território SEU para distribuir pontos.");
+    if (state.pool <= 0) return status("Você já distribuiu todos os seus pontos!");
+    state.armies[id]++;
+    state.pool--;
+    state.selected = id;
+    render();
+    return;
+  }
+  state.selected = state.selected === id ? null : id;
+  render();
+}
 
 function render() {
   const sel = state.selected;
@@ -286,18 +326,34 @@ function render() {
 }
 
 function renderInfo() {
-  const box = $("#info"), id = state.selected;
-  if (!id) { box.innerHTML = '<p class="hint">Clique em um território para ver detalhes e fronteiras.</p>'; return; }
-  const [nome, cont] = TERRITORIES[id];
-  const dono = state.players[state.owner[id]];
-  const viz = [...NEIGHBORS[id]].map(v => {
-    const o = state.players[state.owner[v]];
-    return `<li><span class="dot owner-${o.color}"></span>${TERRITORIES[v][0]} <b>${state.armies[v]}</b> <span class="stats">${esc(o.name)}</span></li>`;
-  }).join("");
-  box.innerHTML = `<h2>${nome}</h2>
-    <p>${CONTINENTS[cont].nome} · ${esc(dono.name)} · ${state.armies[id]} exércitos</p>
-    <h3>Fronteiras</h3><ul>${viz}</ul>`;
+  const box = $("#info");
+  const curPlayer = state.players[state.turn];
+
+  const sel = state.selected;
+  let selDetails = "";
+  if (sel) {
+    const [nome, cont] = TERRITORIES[sel];
+    const dono = state.players[state.owner[sel]];
+    const viz = [...NEIGHBORS[sel]].map(v => {
+      const o = state.players[state.owner[v]];
+      return `<li><span class="dot owner-${o.color}"></span>${TERRITORIES[v][0]} <b>${state.armies[v]}</b> <span class="stats">${esc(o.name)}</span></li>`;
+    }).join("");
+    selDetails = `<hr><h3>${nome}</h3>
+      <p>${CONTINENTS[cont].nome} · ${esc(dono.name)} · ${state.armies[sel]} exércitos</p>
+      <ul>${viz}</ul>`;
+  }
+
+  box.innerHTML = `
+    <div class="turn-box">
+      <p><span class="dot owner-${curPlayer.color}"></span> <b>${esc(curPlayer.name)}</b> (Rodada ${state.round})</p>
+      <p>Fase: <b>Distribuição</b> · Pontos restantes: <b>${state.pool}</b></p>
+      <button id="nextTurnBtn" class="turn-btn" ${state.pool > 0 ? "disabled" : ""}>Passar turno →</button>
+    </div>
+    ${selDetails}
+  `;
+  $("#nextTurnBtn").onclick = endTurn;
 }
+
 
 function renderPlayers() {
   const rows = state.players.map((p, i) => {

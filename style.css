@@ -1,0 +1,104 @@
+/* ===== CORES: tema e jogadores ===== */
+:root {
+  --sea: #eef3f5;
+  --ocean: #9cc9e8;
+  --land: #6faa72;
+  --land-edge: #3f7a4a;
+  --text: #17262e;
+  --muted: #5c717c;
+  --panel: #ffffff;
+  --line: #c9d6dc;
+  --accent: #0e6b7a;
+
+  /* 8 tons pastel com matizes bem separados (nomes em COLOR_NAMES, game.js) */
+  --p0: #ff9aa2; /* Coral */
+  --p1: #8ec5fc; /* Céu */
+  --p2: #a8e6a1; /* Menta */
+  --p3: #ffe08a; /* Mel */
+  --p4: #c3a6f2; /* Lilás */
+  --p5: #ffbf80; /* Pêssego */
+  --p6: #7fe0d4; /* Turquesa */
+  --p7: #c8bfb0; /* Areia */
+}
+:root:not([data-theme="light"]) { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --sea: #0f1c24;
+    --ocean: #123a57;
+    --land: #3f7a4f;
+    --land-edge: #2a5a37;
+    --text: #e4edf1;
+    --muted: #8fa5b0;
+    --panel: #16272f;
+    --line: #26404c;
+    --accent: #5cc4d4;
+  }
+}
+
+/* ===== LAYOUT ===== */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--sea); color: var(--text); font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.topbar h1 { margin: 0; font-size: 1.3rem; letter-spacing: .02em; }
+.topbar select, .topbar button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+.topbar button { background: var(--accent); color: var(--sea); border-color: var(--accent); cursor: pointer; font-weight: 700; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; padding: 16px 20px; align-items: start; }
+#map { width: 100%; max-height: calc(100vh - 100px); height: auto; background: var(--ocean); border-radius: 10px; }
+.land { fill: var(--land); stroke: var(--land-edge); stroke-width: 2; stroke-linejoin: round; }
+.panel { max-height: calc(100vh - 24px); overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; position: sticky; top: 12px; }
+.panel h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.panel h3 { margin: 16px 0 6px; font-size: .95rem; }
+.panel p { margin: 4px 0; color: var(--muted); font-size: .9rem; }
+.panel ul { list-style: none; margin: 0; padding: 0; }
+.panel li { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: .9rem; flex-wrap: wrap; }
+.stats { flex-basis: 100%; padding-left: 20px; color: var(--muted); font-size: .8rem; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } .panel { position: static; } }
+
+/* ===== MAPA ===== */
+.edges line { stroke: rgb(255 255 255 / .55); stroke-width: 2; }
+.edges line.active { stroke: #fff; stroke-width: 4; }
+.terr { cursor: pointer; outline: none; transition: opacity .15s; }
+.terr circle { stroke: rgb(15 35 25 / .6); stroke-width: 2.5; }
+.terr .n { text-anchor: middle; font-weight: 700; font-size: 15px; fill: #1d2a31; pointer-events: none; }
+.terr .label { text-anchor: middle; font-size: 11px; fill: #fff; stroke: rgb(0 0 0 / .55); stroke-width: 3px; paint-order: stroke; pointer-events: none; }
+.terr:hover circle, .terr:focus-visible circle { stroke: #fff; stroke-width: 4; }
+.terr.selected circle { stroke: #fff; stroke-width: 6; }
+.terr.neighbor circle { stroke: #fff; stroke-width: 4; stroke-dasharray: 5 3; }
+.terr.target circle { stroke: #c2182b; stroke-width: 6; stroke-dasharray: none; }
+.terr.dim { opacity: .4; }
+
+/* cor de cada jogador (círculo no mapa e marcador no painel) */
+.owner-0 { --c: var(--p0); } .owner-1 { --c: var(--p1); } .owner-2 { --c: var(--p2); } .owner-3 { --c: var(--p3); }
+.owner-4 { --c: var(--p4); } .owner-5 { --c: var(--p5); } .owner-6 { --c: var(--p6); } .owner-7 { --c: var(--p7); }
+.terr circle { fill: var(--c); }
+.dot { background: var(--c); }
+
+/* ===== BARRA, SALVAR/CARREGAR E NOVO JOGO ===== */
+#status { margin-right: auto; color: var(--muted); font-size: .85rem; }
+.topbar button, .btn { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+.topbar button.primary, dialog button.primary { background: var(--accent); color: var(--sea); border-color: var(--accent); font-weight: 700; }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); padding: 20px; width: min(520px, 94vw); }
+dialog::backdrop { background: rgb(0 0 0 / .5); }
+dialog h2 { margin: 0 0 12px; font-size: 1.15rem; }
+dialog button, dialog select, dialog input { font: inherit; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--sea); color: var(--text); }
+.count { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.setup-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; flex-wrap: wrap; }
+.setup-row input { width: 11ch; }
+.swatches { display: flex; gap: 6px; }
+.swatch { width: 26px; height: 26px; padding: 0; border-radius: 50%; background: var(--c); border: 2px solid transparent; cursor: pointer; }
+dialog .swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel) inset; }
+.hint { color: var(--muted); font-size: .85rem; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+/* ===== TURNOS ===== */
+.panel section + section:not(:empty) { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.actions.left { justify-content: flex-start; margin: 10px 0; }
+.panel button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--sea); color: var(--text); cursor: pointer; }
+.panel button.primary { background: var(--accent); color: var(--sea); border-color: var(--accent); font-weight: 700; }
+.panel button:disabled { opacity: .45; cursor: not-allowed; }
+.log { font-size: .8rem; color: var(--muted); }
+.log li { display: list-item; list-style: none; padding: 2px 0; }
+.out { opacity: .45; text-decoration: line-through; }

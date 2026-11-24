@@ -117,6 +117,68 @@ function endTurn() {
   render();
 }
 
+function nextPhase() {
+  if (state.phase === "deploy") {
+    if (state.pool > 0) return status("Distribua todos os seus pontos antes de avançar.");
+    if (state.round === 1) {
+      // No 1º turno não há disputa: passa direto para o próximo jogador
+      endTurn();
+    } else {
+      state.phase = "attack";
+      state.selected = null;
+      state.battleLog = "";
+      render();
+    }
+  } else {
+    endTurn();
+  }
+}
+
+function rollDice(n) {
+  return Array.from({ length: n }, () => 1 + Math.floor(Math.random() * 6)).sort((a, b) => b - a);
+}
+
+function attackTerritory(fromId, toId) {
+  const atkArmies = state.armies[fromId];
+  const defArmies = state.armies[toId];
+  if (atkArmies < 2) return status("Você precisa de pelo menos 2 exércitos para atacar.");
+
+  // Até 3 dados de ataque (deixando 1 exército no território) vs até 3 de defesa
+  const atkDiceCount = Math.min(3, atkArmies - 1);
+  const defDiceCount = Math.min(3, defArmies);
+  const atkRolls = rollDice(atkDiceCount);
+  const defRolls = rollDice(defDiceCount);
+
+  let atkLoss = 0, defLoss = 0;
+  const pairs = Math.min(atkRolls.length, defRolls.length);
+  for (let i = 0; i < pairs; i++) {
+    if (atkRolls[i] > defRolls[i]) defLoss++;
+    else atkLoss++; // empate favorece a defesa
+  }
+
+  state.armies[fromId] -= atkLoss;
+  state.armies[toId] -= defLoss;
+
+  const atkName = TERRITORIES[fromId][0], defName = TERRITORIES[toId][0];
+  let msg = `🎲 Ataque [${atkRolls.join(", ")}] vs Defesa [${defRolls.join(", ")}] → `;
+
+  if (state.armies[toId] <= 0) {
+    // Conquistou o território! Move os exércitos sobreviventes do ataque
+    const moveCount = Math.min(state.armies[fromId] - 1, atkDiceCount - atkLoss) || 1;
+    state.owner[toId] = state.turn;
+    state.armies[toId] = moveCount;
+    state.armies[fromId] -= moveCount;
+    msg += `<b>${defName} conquistado!</b> (${moveCount} exército(s) avançaram)`;
+    state.selected = state.armies[toId] >= 2 ? toId : null;
+  } else {
+    msg += `${atkName} perdeu ${atkLoss}, ${defName} perdeu ${defLoss}.`;
+    if (state.armies[fromId] < 2) state.selected = null;
+  }
+
+  state.battleLog = msg;
+  render();
+}
+
 /* ===== SALVAR / CARREGAR ===== */
 function serialize() {
   return JSON.stringify({ version: 1, savedAt: Date.now(), players: state.players, owner: state.owner, armies: state.armies });
@@ -296,8 +358,11 @@ function buildMap() {
 }
 
 function select(id) {
+  const isMine = state.owner[id] === state.turn;
+
+  // FASE 1: DISTRIBUIÇÃO
   if (state.phase === "deploy") {
-    if (state.owner[id] !== state.turn) return status("Clique em um território SEU para distribuir pontos.");
+    if (!isMine) return status("Clique em um território SEU para distribuir pontos.");
     if (state.pool <= 0) return status("Você já distribuiu todos os seus pontos!");
     state.armies[id]++;
     state.pool--;
@@ -305,9 +370,30 @@ function select(id) {
     render();
     return;
   }
-  state.selected = state.selected === id ? null : id;
-  render();
+
+  // FASE 2: DISPUTA (ATAQUE)
+  if (state.phase === "attack") {
+    if (!state.selected) {
+      if (!isMine) return status("Selecione primeiro um território SEU para atacar.");
+      if (state.armies[id] < 2) return status("Este território precisa de pelo menos 2 exércitos para atacar.");
+      state.selected = id;
+      render();
+      return;
+    }
+    if (state.selected === id) { state.selected = null; render(); return; }
+    if (isMine) {
+      if (state.armies[id] >= 2) { state.selected = id; render(); }
+      else status("Precisa de pelo menos 2 exércitos para atacar.");
+      return;
+    }
+    if (!NEIGHBORS[state.selected].has(id)) {
+      return status("Você só pode atacar territórios vizinhos!");
+    }
+    attackTerritory(state.selected, id);
+    return;
+  }
 }
+
 
 function render() {
   const sel = state.selected;
@@ -329,6 +415,18 @@ function renderInfo() {
   const box = $("#info");
   const curPlayer = state.players[state.turn];
 
+  const isDeploy = state.phase === "deploy";
+  const phaseLabel = isDeploy ? "1. Distribuição" : "2. Disputa (Ataque)";
+  const btnLabel = isDeploy
+    ? (state.round === 1 ? "Concluir 1º turno →" : "Ir para Disputa →")
+    : "Encerrar turno →";
+
+  const instruction = isDeploy
+    ? `Pontos restantes: <b>${state.pool}</b>. Clique nos seus territórios para reforçar.`
+    : (state.selected
+        ? `Atacando de <b>${TERRITORIES[state.selected][0]}</b>. Clique em um vizinho inimigo!`
+        : `Selecione um território seu (2+ exércitos) para atacar um vizinho.`);
+
   const sel = state.selected;
   let selDetails = "";
   if (sel) {
@@ -346,14 +444,15 @@ function renderInfo() {
   box.innerHTML = `
     <div class="turn-box">
       <p><span class="dot owner-${curPlayer.color}"></span> <b>${esc(curPlayer.name)}</b> (Rodada ${state.round})</p>
-      <p>Fase: <b>Distribuição</b> · Pontos restantes: <b>${state.pool}</b></p>
-      <button id="nextTurnBtn" class="turn-btn" ${state.pool > 0 ? "disabled" : ""}>Passar turno →</button>
+      <p>Fase: <b>${phaseLabel}</b></p>
+      <p>${instruction}</p>
+      ${state.battleLog ? `<p style="background:var(--panel);padding:6px;border-left:3px solid var(--accent);border-radius:4px;">${state.battleLog}</p>` : ""}
+      <button id="nextPhaseBtn" class="turn-btn" ${isDeploy && state.pool > 0 ? "disabled" : ""}>${btnLabel}</button>
     </div>
     ${selDetails}
   `;
-  $("#nextTurnBtn").onclick = endTurn;
+  $("#nextPhaseBtn").onclick = nextPhase;
 }
-
 
 function renderPlayers() {
   const rows = state.players.map((p, i) => {

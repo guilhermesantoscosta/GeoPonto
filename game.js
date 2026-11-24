@@ -95,7 +95,7 @@ function initTurn(turnIdx, round) {
   state.selected = null;
 }
 
-function select(id) {
+function newGame(players) {
   const owner = {}, armies = {};
   shuffle([...IDS]).forEach((id, i) => {
     owner[id] = i % players.length;

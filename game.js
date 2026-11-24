@@ -203,7 +203,14 @@ function parseSave(text) {
 }
 
 function restore(d) {
-  state = { players: d.players, owner: d.owner, armies: d.armies, selected: null };
+  state = {
+    players: d.players, owner: d.owner, armies: d.armies,
+    turn: d.turn ?? 0,
+    round: d.round ?? 1,
+    phase: d.phase ?? "deploy",
+    pool: d.pool ?? calcDeployPoints(d.turn ?? 0),
+    selected: null
+  };
   render();
 }
 

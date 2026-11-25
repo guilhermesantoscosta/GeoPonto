@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War das Américas</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>War das Américas</h1>
+  <span id="status" role="status"></span>
+  <button id="newGame" class="primary">Novo jogo</button>
+  <details id="menu" class="menu">
+    <summary>Jogo ▾</summary>
+    <div class="menu-pop">
+      <button id="saveSlot">Salvar</button>
+      <button id="loadSlot">Carregar</button>
+      <button id="exportFile">Exportar arquivo</button>
+      <label class="btn">Importar arquivo<input type="file" id="importFile" accept=".json,application/json" hidden></label>
+    </div>
+  </details>
+</header>
+
+<main class="layout">
+  <section id="stage" class="stage">
+    <div id="hud" class="hud"></div>
+    <div class="map-wrap">
+      <svg id="map" viewBox="0 0 640 980" role="img" aria-label="Mapa das Américas"></svg>
+      <div id="banner" class="banner" aria-live="polite"></div>
+      <div id="dice" class="dice-box" hidden>
+        <div class="side"><h4 id="diceAN">Ataque</h4><div id="diceA" class="row"></div></div>
+        <div class="vs">×</div>
+        <div class="side"><h4 id="diceDN">Defesa</h4><div id="diceD" class="row"></div></div>
+        <div id="diceR" class="result"></div>
+      </div>
+    </div>
+  </section>
+  <aside class="panel">
+    <section id="players"></section>
+    <section id="info"></section>
+    <section id="log"></section>
+  </aside>
+</main>
+
+<dialog id="setup">
+  <h2>Novo jogo</h2>
+  <label class="count">Jogadores <select id="numPlayers"></select></label>
+  <div id="setupRows"></div>
+  <p class="hint">Nome com até 10 caracteres. Se escolher uma cor já usada, os dois jogadores trocam de cor.</p>
+  <div class="actions">
+    <button id="cancelSetup">Cancelar</button>
+    <button id="startGame" class="primary">Começar</button>
+  </div>
+</dialog>
+<script src="game.js"></script>
+</body>
+</html>
